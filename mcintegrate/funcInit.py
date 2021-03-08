@@ -4,11 +4,12 @@ Created on Thu Mar  4 12:59:37 2021
 
 @author: Robert Kerr
 
-Function initialisation subroutines. Find absolute limits given limit function
+Function initialisation subroutines. Finds absolute limits given limit function
 """
 
 from numpy import linspace as _linspace
 from itertools import product as _product
+import mcintegrate.cacheManager as _cacheManager
 
 #Creates object contain the function, its maximum and minium between a and b over n steps
 class function:
@@ -98,11 +99,31 @@ class function:
             absLims.append([a,b])
         return absLims    
     
+    def __checkCache(self,lims):
+        isCached = _cacheManager.tryLimitCache(lims)
+        if isCached:
+            absLims = _cacheManager.readCache(lims)
+            return absLims
+        else:
+            return None
+    
+    
+    
     def __init__(self,f,n,lims):
         self.__f = f
-        self.__funcCode = f.__code__.co_code
+        self.__limitCode = _cacheManager.createLimitCode(lims)
         self.__lims = lims
-        self.__absLims = self.__findAbsLims(lims,n)
+        
+        #Checks if function limits have already been cached
+        if self.__checkCache(self.__limitCode) == None:
+            print('Finding Limits...')
+            self.__absLims = self.__findAbsLims(lims,n)
+            _cacheManager.writeCache(self.__limitCode, self.__absLims)
+            print('Caching limits...')
+        else:
+            self.__absLims = self.__checkCache(self.__limitCode)
+            print('Found limits in cache')
+        
         
     def getAbsLims(self):
         return self.__absLims
@@ -110,9 +131,9 @@ class function:
     def __call__(self,*x):
         return self.__f(*x)
         
-    #Returns function bytecode for caching
+    #Returns limit bytecode for caching
     def getCode(self):
-        return self.__funcCode
+        return self.__limitCode
     
 
 

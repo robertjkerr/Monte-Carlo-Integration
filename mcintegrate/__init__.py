@@ -8,7 +8,7 @@ Python library for Monte Carlo numerical integration
 
 Function `integrate` argument specifications for a d-th integral (1: single, 2: double, 3: triple, ...):
     (Function to be integrated) f must have d arguments. Recommend f = lambda *q: ...
-    (Number of iterations) n must be a positive integer
+    (Number of iterations) n must be a positive integer.
     (Limits) lims must be a list with d elements. Each element (a pair of limits) must have 2 subelements.
         Limits can be either numbers or functions, but if functions must be ordered in terms of dependencies
         If a function, limit must also have d arguments.
@@ -16,7 +16,7 @@ Function `integrate` argument specifications for a d-th integral (1: single, 2: 
 
 from numpy.random import uniform as __random
 from numpy import array as __array
-from funcInit import function
+from mcintegrate.funcInit import function as __function
 
 
 """
@@ -51,7 +51,7 @@ def __absInt(absLims):
     return out
 
 def integrate(f,n,lims):
-    f = function(f,n,lims)
+    f = __function(f,n,lims)
     scatter = __scatter(n,f.getAbsLims())
     newScatter = __filterScatter(f,scatter,lims)
     fMapping = __fMap(f, newScatter)
@@ -59,5 +59,6 @@ def integrate(f,n,lims):
     return intRat*__absInt(f.getAbsLims())*sum(fMapping)/len(newScatter)
     
     
+
     
     
