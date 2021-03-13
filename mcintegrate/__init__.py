@@ -16,7 +16,7 @@ Function `integrate` argument specifications for a d-th integral (1: single, 2: 
 
 from numpy.random import uniform as __random
 from numpy import array as __array
-from mcintegrate.funcInit import function as __function
+import mcintegrate.limitInit as __limInit
 
 
 """
@@ -34,13 +34,12 @@ __fMap = lambda f,throws : __array([f(*p) for p in throws])
     `__filterScatter` filters a scatter onto the real limits e.g. circle
     `__absInt` finds the integral (area, volume etc) of the maximum limits
     `integrate` finds the Monte Carlo integral of a function f within limits (lims) over n iterations
-
 """
 
-def __filterScatter(f,throws,lims):
+def __filterScatter(throws,lims):
     scatter = []
     for throw in throws:
-        if f.throwCheck(throw,lims):
+        if __limInit.throwCheck(throw,lims):
             scatter.append(throw)
     return scatter
 
@@ -51,14 +50,8 @@ def __absInt(absLims):
     return out
 
 def integrate(f,n,lims):
-    f = __function(f,n,lims)
-    scatter = __scatter(n,f.getAbsLims())
-    newScatter = __filterScatter(f,scatter,lims)
+    absLims = __limInit.getAbsLims(n,lims)
+    scatter = __scatter(n,absLims)
+    newScatter = __filterScatter(scatter,lims)
     fMapping = __fMap(f, newScatter)
-    intRat = len(newScatter)/len(scatter)
-    return intRat*__absInt(f.getAbsLims())*sum(fMapping)/len(newScatter)
-    
-    
-
-    
-    
+    return __absInt(absLims)*sum(fMapping)/len(scatter)

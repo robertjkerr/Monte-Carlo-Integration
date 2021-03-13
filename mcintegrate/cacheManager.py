@@ -10,9 +10,11 @@ References functions by their [modified] bytecode
 """
 
 import pickle as __pickle
+from os import remove as __remove
+from glob import glob as __glob
 
 __testType = lambda l: isinstance(l,int) or isinstance(l,float)
-__cacheLoc = lambda f: 'mcintegrate/bin/limitsCache/' + f + '.pkl'
+__cacheLoc = 'mcintegrate/bin/limitsCache/'
 
 """
     `createLimitCode` creates a code associated with a limit.
@@ -39,23 +41,21 @@ def createLimitCode(lims):
 
 def tryLimitCache(limCode):
     try:
-        limFile = open(__cacheLoc(limCode),'rb')
+        limFile = open(__cacheLoc + limCode + '.pkl','rb')
         limFile.close()
         return True
     except:
         return False
     
 def writeCache(limCode,absLims):
-    limFile = open(__cacheLoc(limCode),'x')
+    limFile = open(__cacheLoc + limCode + '.pkl','x')
     limFile.close()
-    limFile = open(__cacheLoc(limCode),'wb')
+    limFile = open(__cacheLoc + limCode + '.pkl','wb')
     __pickle.dump(absLims,limFile)
     limFile.close()
     
 def readCache(limCode):
-    limFile = open(__cacheLoc(limCode),'rb')
+    limFile = open(__cacheLoc + limCode + '.pkl','rb')
     absLims = __pickle.load(limFile)
     limFile.close()
     return absLims
-    
-    
