@@ -2,7 +2,7 @@
 """
 Created on Sat Mar 13 23:39:59 2021
 
-@author: RobertKerr
+@author: Robert Kerr
 """
 
 from itertools import product as __product
@@ -17,7 +17,7 @@ import numpy as np
     `__scatter` throws n throws into the same space
     `__filterScatter` filters out all throws in scatter not within limits
     `__fMap` applies function f to all points in scatter
-    `boxSample` returns a scatter and it's f mapping
+    `boxSample` returns a scatter and its f mapping
 """
 
 def __testType(l):
@@ -75,17 +75,17 @@ def __getCombinations(extrema):
     QList = []
     for d in extrema:
         QList.append(list(range(d[0],d[1]+1)))
-    return __product(*QList)
+    return list(__product(*QList))
 
-def __oneNorm(*args):
+def __oneNorm(start,*args):
     norm = 0
-    for q in args:
-        norm += abs(q)
+    for i in range(len(args)):
+        norm += abs(args[i]-start[i])
     return norm
 
-def getBoxes(r, dimensions):
+def getBoxes(r, dimensions,start):
     extrema = np.array([[-r,r] for i in range(dimensions)])
     combinations = __getCombinations(extrema)
-    return [combination for combination in combinations if __oneNorm(*combination) == r]
+    return [combination for combination in combinations if __oneNorm(start,*combination) == r]
 
 
