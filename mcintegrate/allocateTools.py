@@ -36,10 +36,9 @@ def __getBoxes(r, dimensions,start):
 def allocate(cores, r, dimensions, start):
     boxes = __getBoxes(r, dimensions, start)
     boxList = [[] for i in range(cores)]
-    
     for b in range(len(boxes)):
         box = boxes[b]
         pool = b%cores
         boxList[pool].append(box)
-        
     return boxList
+

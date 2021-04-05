@@ -2,5 +2,4 @@
 __pycache__
 .vscode
 mcintegrate/__pycache__
-test
-mcintegrate/bin
+test.py

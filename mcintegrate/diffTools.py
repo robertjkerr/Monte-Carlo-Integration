@@ -29,5 +29,5 @@ def grad(f,position,dimensions,delta):
 
 
 def differentiate(f,position,direction,delta):
-    unitDir = direction/__np.linalg.norm(direction)
+    unitDir = __np.array(direction)/__np.linalg.norm(direction)
     return __np.dot(unitDir,grad(f,position,len(list(direction)),delta))
