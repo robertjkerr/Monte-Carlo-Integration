@@ -1,5 +1,4 @@
 .spyproject
 __pycache__
 .vscode
-mcintegrate/__pycache__
 test.py
