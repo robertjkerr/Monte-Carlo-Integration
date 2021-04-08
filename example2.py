@@ -1,9 +1,10 @@
 """
-Example program using mcintegrate
+Mulitprocessed example program using mcintegrate
 """
 
 import mcintegrate as mc
 import multiprocessing as mp
+from time import time
 
 cpus = mp.cpu_count()
 
@@ -25,10 +26,11 @@ def lim4(*q):
 lims = [[-1,1], [lim1,lim2], [lim3,lim4]]
 
 def integrate(segment):
-    return mc.integrate(f,100,lims,boxSize=0.5,wedge=[segment,cpus])
+    return mc.integrate(f,10000,lims,boxSize=0.5,wedge=[segment,cpus])
 
 #Segments integral into multiple wedges and then parallelised
 if __name__ == '__main__':
+    t0 = time()
     pool = mp.Pool(processes=cpus)
     results = [pool.apply(integrate, args=(s,)) for s in range(1,cpus+1)]
-    print(sum(results))
+    print(sum(results),time()-t0)
