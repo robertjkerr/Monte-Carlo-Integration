@@ -1,4 +1,2 @@
-.spyproject
-__pycache__
-.vscode
-test.py
+mctools/__pycache__
+examples/__pycache__
