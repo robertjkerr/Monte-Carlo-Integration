@@ -2,7 +2,7 @@
 Single threaded example program using mcintegrate
 """
 
-import mcintegrate as mc
+import mctools as mc
 from time import time
 
 #Function to be integrated

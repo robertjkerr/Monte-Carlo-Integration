@@ -2,7 +2,7 @@
 Mulitprocessed example program using mcintegrate
 """
 
-import mcintegrate as mc
+import mctools as mc
 import multiprocessing as mp
 from time import time
 
