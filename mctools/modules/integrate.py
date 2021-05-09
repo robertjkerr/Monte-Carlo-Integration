@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Forked from 'RobertK20/Monte-Carlo-Integration' on 23/04/2021
-
 @author: Robert Kerr
 
 Monte Carlo Integration function 
@@ -83,16 +81,14 @@ def _getCombinations(extrema):
         QList.append(list(range(d[0],d[1]+1)))
     return list(_product(*QList))
 
-def _oneNorm(start,*args):
-    norm = 0
-    for i in range(len(args)):
-        norm += abs(args[i]-start[i])
-    return norm
+def _oneNorm(start,vector):
+    diff = _np.array(vector) - _np.array(start)
+    return sum(abs(diff)) 
 
 def _getBoxes(r, dimensions,start):
     extrema = [[-r,r] for i in range(dimensions)]
     combinations = _getCombinations(extrema)
-    return [combination for combination in combinations if _oneNorm(start,*combination) == r]
+    return [combination for combination in combinations if _oneNorm(start,combination) == r]
 
 def _allocate(cores, r, dimensions, start):
     boxes = _getBoxes(r, dimensions, start)
@@ -109,8 +105,7 @@ def _allocate(cores, r, dimensions, start):
 Integration subroutines. Main functions for performing integration.
 
     `_intBoxes` integrates a set of boxes.
-    '_integrateFunc' main integral function. Integrates full shape, or a wedge of a full shape
-    `integrate` exported public function. Is `_integrateFunc` in essence but handles kwargs
+    'integrateFunc' main integral function. Integrates full shape, or a wedge of a full shape
 """
 
 def _intBoxes(boxes, f, boxSize, n, lims):
@@ -124,7 +119,7 @@ def _intBoxes(boxes, f, boxSize, n, lims):
        
     return (totalFMap/n)*(boxSize**len(lims))
 
-def _integrateFunc(f,lims,wedge,n,boxSize,start):
+def integrateFunc(f,lims,wedge,n,boxSize,start):
     dimensions = len(lims)
     if start == None:
         start = list(_np.zeros(len(lims)))
@@ -144,21 +139,3 @@ def _integrateFunc(f,lims,wedge,n,boxSize,start):
 
     return integral
 
-
-def integrate(f,n,lims,**kwargs):
-    try:
-        wedge = kwargs["wedge"]
-    except:
-        wedge = [1,1]
-    
-    try:
-        boxSize = kwargs["boxSize"]
-    except:
-        boxSize = 1
-    
-    try:
-        start = kwargs["start"]
-    except:
-        start = None
-
-    return _integrateFunc(f,lims,wedge,n,boxSize,start)

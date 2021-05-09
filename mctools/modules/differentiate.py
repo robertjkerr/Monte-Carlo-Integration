@@ -1,6 +1,4 @@
 """
-Forked from 'RobertK20/Monte-Carlo-Integration' on 23/04/2021
-
 @author: Robert Kerr
 
 Differentiation functions

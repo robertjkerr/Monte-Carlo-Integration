@@ -6,6 +6,7 @@ Robert Kerr
 `_percentStr` converts percent to 3 digit number e.g. 45.0 -> 045%
 `_plot` prints progress bar with percentage as argument
 `pbar` prints progress bar as function of iterations and total iterations
+
 """
 
 def _percentStr(percent):
