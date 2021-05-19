@@ -16,9 +16,9 @@ List of `kwargs`
 #### Numerical differentiation
 
 Numerical multidimensional derivative functions are included as well:
- - `partialDiff(f, position, axis, dimensions, delta)` gets partial derivative of function `f` at `position` along `axis`th direction, with `dimensions` total number of dimensions and step-size `delta`
- - `grad(f, position, dimensions, delta)` gets grad of function `f` with similar arguments to `partialDiff`
- - `directDiff(f, position, dimensions, delta)` gets directional derivative of `f`
+ - `mctools.partialDiff(f, position, axis, dimensions, delta)` gets partial derivative of function `f` at `position` along `axis`th direction, with `dimensions` total number of dimensions and step-size `delta`
+ - `mctools.grad(f, position, dimensions, delta)` gets grad of function `f` with similar arguments to `partialDiff`
+ - `mctools.directDiff(f, position, dimensions, delta)` gets directional derivative of `f`
 
 #### Progress bar
 

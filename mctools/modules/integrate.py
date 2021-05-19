@@ -9,70 +9,12 @@ import numpy as _np
 from itertools import product as _product
 
 """
-Throw tools. Used for Monte Carlo random throwing.
+Allocation subroutines. Assists with parallelisation.
 
-    `_testType` checks if input is a number or (by assumption) a function
-    `_throwCheck` checks if throw is within limits
-    `_throw` throws point randomly onto space of size boxSize^d
-    `_scatter` throws n throws into the same space
-    `_filterScatter` filters out all throws in scatter not within limits
-    `_fMap` applies function f to all points in scatter
-    `_boxSample` returns a scatter and its f mapping
-"""
-
-def _testType(l):
-    return isinstance(l,int) or isinstance(l,float)
-
-def _throwCheck(throw,lims):
-    d = len(lims)
-    for i in range(d):#Check each dimension
-        l = lims[i]
-        if _testType(l[0]):#Find lower limit
-            a = l[0]
-        else:
-            a = l[0](*throw)
-        
-        if _testType(l[1]):#Find upper limit
-            b = l[1]
-        else:
-            b = l[1](*throw)
-        
-        if throw[i]>=b or throw[i]<=a:#Check limits
-            return False
-    return True
-
-def _throw(corner, boxSize, dimensions):
-    throw = [float(_np.random.uniform(corner[d]*boxSize, (corner[d]+1)*boxSize)) for d in range(dimensions)]
-    return _np.array(throw)
-
-def _scatter(corner, boxSize, dimensions, n):
-    scatter = [_throw(corner,boxSize,dimensions) for i in range(n)]
-    return _np.array(scatter)
-
-def _filterScatter(scatter,lims):
-    outScatter = []
-    for throw in scatter:
-        if _throwCheck(throw,lims):
-            outScatter.append(throw)
-    return _np.array(outScatter)
-
-def _fMap(f, scatter):
-    return [f(*throw) for throw in scatter]
-
-def _boxSample(f, corner,boxSize,n,lims):
-    scatter = _filterScatter(_scatter(corner, boxSize, len(lims), n),lims)
-    fMapping = sum(_fMap(f, scatter))
-    return len(scatter), fMapping
-
-
-
-"""
-Allocation subroutines. Assist with parallelisation.
-
-    `_getCombinations` gets all vectors within limits defined by extrema
-    `_oneNorm` gets the one-norm of a vector
-    `_getBoxes` gets all combinations of vectors within extrema that have the same one-norm
-    `allocate` gets all vectors returned by _getBoxes and divides them into sublists for each core
+    `_getCombinations` gets all vectors within limits defined by extrema.
+    `_oneNorm` gets the one-norm of a vector.
+    `_getBoxes` gets all combinations of vectors within extrema that have the same one-norm.
+    `allocate` gets all vectors returned by _getBoxes and divides them into sublists for each core.
 """
 
 def _getCombinations(extrema):
@@ -97,45 +39,100 @@ def _allocate(cores, r, dimensions, start):
         box = boxes[b]
         pool = b%cores
         boxList[pool].append(box)
-    return boxList
-
+    return tuple(boxList)
 
 
 """
-Integration subroutines. Main functions for performing integration.
+Throw tools. Used for Monte Carlo random throwing.
 
-    `_intBoxes` integrates a set of boxes.
-    'integrateFunc' main integral function. Integrates full shape, or a wedge of a full shape
+    `_testType` checks if input is a number or (by assumption) a function.
+    `_throwCheck` checks if throw is within limits.
+    `_throw` throws point randomly onto space of size boxSize^d.
+    `_scatter` throws n throws into the same space.
+    `_filterScatter` returns all throws in a scatter that are within the limits.
+    `_filterBoxes` takes a selection of boxes, scatters over them and filters the throws.
 """
 
-def _intBoxes(boxes, f, boxSize, n, lims):
-    totalScatter = 0
-    totalFMap = 0
-    
-    for box in boxes:
-        scatter, fMap = _boxSample(f, box, boxSize, n, lims)
-        totalScatter += scatter
-        totalFMap += fMap
-       
-    return (totalFMap/n)*(boxSize**len(lims))
+def _testType(l):
+    return isinstance(l,int) or isinstance(l,float)
 
-def integrateFunc(f,lims,wedge,n,boxSize,start):
+def _throwCheck(throw,lims):
+    d = len(lims)
+    for i in range(d):#Check each dimension
+        l = lims[i]
+        if _testType(l[0]):#Find lower limit
+            a = l[0]
+        else:
+            a = l[0](*throw)
+        
+        if _testType(l[1]):#Find upper limit
+            b = l[1]
+        else:
+            b = l[1](*throw)
+        
+        if throw[i]>=b or throw[i]<=a:#Check limits
+            # print(throw, 'False')
+            return False 
+    # print(throw, 'True')
+    return True 
+
+def _throw(corner, boxSize, dimensions):
+     initThrow = _np.random.rand(dimensions)
+     adjustedThrow = boxSize*(initThrow + _np.array(corner))
+     return adjustedThrow
+
+def _scatter(corner, boxSize, dimensions, n):
+    scatter = tuple([_throw(corner,boxSize,dimensions) for i in range(n)])
+    return _np.array(scatter)
+
+def _filterScatter(scatter, lims):
+    check = lambda throw: _throwCheck(throw, lims)
+    filteredScatter = filter(check, tuple(scatter)) 
+    return filteredScatter 
+
+def _filterBoxes(boxes, boxSize, n, lims):
+    makeScatter = lambda box: _scatter(box, boxSize, len(lims), n)
+    filt = lambda box: _filterScatter(makeScatter(box), lims)
+    numThrows = n*len(boxes)
+    filteredThrows = map(filt, boxes)
+
+    parsedThrows = []
+    for part in filteredThrows:
+        for throw in part:
+            parsedThrows.append(throw)
+
+    return tuple(parsedThrows), numThrows
+
+
+"""
+Integration subroutines. Main functions for integrating.
+
+    `_converge` is main algorithm. Expands from start and throws scatters and filters them until the limits have been engulfed.
+    `integrateFunc` maps all the filtered throws and finds the integral.
+"""
+
+def _converge(lims, wedge, n, boxSize, start, r, totalThrows, totalBoxes):
     dimensions = len(lims)
-    if start == None:
-        start = list(_np.zeros(len(lims)))
-
-    r = 0
-    integral, nextIntStep = 0, -1
-    
-    while nextIntStep != 0:        
-        boxes = _allocate(wedge[1], r, dimensions, start)[wedge[0]-1]
-        while boxes == []:
-            r += 1
-            boxes = _allocate(wedge[1], r, dimensions, start)[wedge[0]-1]
-
-        nextIntStep = _intBoxes(boxes, f, boxSize, n, lims)
-        integral += nextIntStep
+    boxes = _allocate(wedge[1], r, dimensions, start)[wedge[0]-1]
+    while boxes == []:
         r += 1
+        boxes = _allocate(wedge[1], r, dimensions, start)[wedge[0]-1]
 
-    return integral
-
+    numBoxes = len(boxes)
+    filteredThrows, numThrows = _filterBoxes(boxes, boxSize, n, lims)
+    if filteredThrows != ():
+        return filteredThrows + _converge(lims, wedge, n, boxSize, start, r+1, totalThrows+numThrows, totalBoxes+numBoxes)
+    else:
+        return filteredThrows, totalThrows+numThrows, totalBoxes+numBoxes
+    
+def integrateFunc(f, lims, wedge, n, boxSize, start):
+    if start == None:
+        start = _np.zeros(len(lims))
+    g = lambda throw: f(*throw)
+    getThrows = _converge(lims,wedge,n,boxSize,start,0,0,0)
+    l = len(getThrows)
+    throws = tuple([throw for throw in getThrows[:(l-3)]])
+    totalThrows, totalBoxes = getThrows[l-2], getThrows[l-1]
+    fMap = map(g, throws)
+    return (totalBoxes*boxSize**len(lims))*sum(fMap)/totalThrows
+    
