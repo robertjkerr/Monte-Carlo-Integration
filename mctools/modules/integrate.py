@@ -7,30 +7,29 @@ Monte Carlo Integration function
 
 import numpy as _np
 from itertools import product as _product
+from functools import lru_cache
 
 """
 Allocation subroutines. Assists with parallelisation.
 
     `_getCombinations` gets all vectors within limits defined by extrema.
-    `_oneNorm` gets the one-norm of a vector.
     `_getBoxes` gets all combinations of vectors within extrema that have the same one-norm.
     `allocate` gets all vectors returned by _getBoxes and divides them into sublists for each core.
 """
 
+@lru_cache
 def _getCombinations(extrema):
-    QList = []
-    for d in extrema:
-        QList.append(list(range(d[0],d[1]+1)))
-    return list(_product(*QList))
+    QList = [tuple(range(d[0],d[1]+1)) for d in extrema]
+    return set(_product(*QList))
 
-def _oneNorm(start,vector):
-    diff = _np.array(vector) - _np.array(start)
-    return sum(abs(diff)) 
-
-def _getBoxes(r, dimensions,start):
-    extrema = [[-r,r] for i in range(dimensions)]
-    combinations = _getCombinations(extrema)
-    return [combination for combination in combinations if _oneNorm(start,combination) == r]
+def _getBoxes(r0, dimensions,start):
+    extrema = lambda r: tuple([(-r+start[d],r+start[d]) for d in range(dimensions)])
+    if r0 > 0:
+        combinations = _getCombinations(extrema(r0))
+        combinationsInner = _getCombinations(extrema(r0-1))
+        return tuple(combinations-combinationsInner)
+    else:
+        return tuple(_getCombinations(extrema(0)))
 
 def _allocate(cores, r, dimensions, start):
     boxes = _getBoxes(r, dimensions, start)
@@ -71,9 +70,7 @@ def _throwCheck(throw,lims):
             b = l[1](*throw)
         
         if throw[i]>=b or throw[i]<=a:#Check limits
-            # print(throw, 'False')
             return False 
-    # print(throw, 'True')
     return True 
 
 def _throw(corner, boxSize, dimensions):
@@ -113,7 +110,8 @@ Integration subroutines. Main functions for integrating.
 
 def _converge(lims, wedge, n, boxSize, start, r, totalThrows, totalBoxes):
     dimensions = len(lims)
-    boxes = _allocate(wedge[1], r, dimensions, start)[wedge[0]-1]
+    diff = (_np.array(start)/boxSize).astype(int)
+    boxes = _allocate(wedge[1], r, dimensions, diff)[wedge[0]-1]
     while boxes == []:
         r += 1
         boxes = _allocate(wedge[1], r, dimensions, start)[wedge[0]-1]
@@ -124,15 +122,17 @@ def _converge(lims, wedge, n, boxSize, start, r, totalThrows, totalBoxes):
         return filteredThrows + _converge(lims, wedge, n, boxSize, start, r+1, totalThrows+numThrows, totalBoxes+numBoxes)
     else:
         return filteredThrows, totalThrows+numThrows, totalBoxes+numBoxes
-    
+ 
 def integrateFunc(f, lims, wedge, n, boxSize, start):
     if start == None:
         start = _np.zeros(len(lims))
     g = lambda throw: f(*throw)
-    getThrows = _converge(lims,wedge,n,boxSize,start,0,0,0)
-    l = len(getThrows)
-    throws = tuple([throw for throw in getThrows[:(l-3)]])
-    totalThrows, totalBoxes = getThrows[l-2], getThrows[l-1]
-    fMap = map(g, throws)
-    return (totalBoxes*boxSize**len(lims))*sum(fMap)/totalThrows
-    
+    try:
+        getThrows = _converge(lims,wedge,n,boxSize,start,0,0,0)
+        l = len(getThrows)
+        throws = tuple([throw for throw in getThrows[:(l-3)]])
+        totalThrows, totalBoxes = getThrows[l-2], getThrows[l-1]
+        fMap = map(g, throws)
+        return (totalBoxes*boxSize**len(lims))*sum(fMap)/totalThrows
+    except RecursionError as re:
+        print('Suspected recursion depth exceeded. Try increasing "boxSize"')
