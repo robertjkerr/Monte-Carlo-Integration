@@ -26,3 +26,10 @@ def grad(f,position,dimensions,delta):
 def directDiff(f,position,direction,delta):
     unitDir = _np.array(direction)/_np.linalg.norm(direction)
     return _np.dot(unitDir,grad(f,position,len(list(direction)),delta))
+
+def div(F, position, delta):
+    divList = []
+    for d in range(len(F)):
+        divList.append(partialDiff(F[d], position, d, len(F), delta))
+    return sum(divList)
+        

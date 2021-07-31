@@ -1,4 +1,4 @@
-from mctools.modules.differentiate import partialDiff, grad, directDiff
+from mctools.modules.differentiate import partialDiff, grad, directDiff, div
 from mctools.modules.integrate import integrateFunc as _integrateFunc
 from mctools.modules.progressBar import pbar
 

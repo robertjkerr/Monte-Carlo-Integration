@@ -133,5 +133,5 @@ def integrateFunc(f, lims, wedge, n, boxSize, start):
         totalThrows, totalBoxes = getThrows[l-2], getThrows[l-1]
         fMap = map(g, throws)
         return (totalBoxes*boxSize**len(lims))*sum(fMap)/totalThrows
-    except RecursionError as re:
+    except RecursionError:
         print('Suspected recursion depth exceeded. Try increasing "boxSize"')
