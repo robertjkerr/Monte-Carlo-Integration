@@ -4,4 +4,9 @@ examples/__pycache__
 example1.py
 example2.py
 .vscode
-setup.py
+mctools/c/src/*.exe
+mctools/c/src/*.pdb
+mctools/c/src/*.obj
+mctools/c/src/*.ilk
+mctools/c/src/*.o
+build
