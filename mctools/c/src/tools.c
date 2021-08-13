@@ -2,8 +2,7 @@
 #include <stdlib.h>
 
 //Returns pointer for dynamic double array
-double ** dmatrix(int r, int c)
-{
+double ** dmatrix(int r, int c) {
     double *ptr, **arr;
     int len, i;
 
@@ -19,8 +18,7 @@ double ** dmatrix(int r, int c)
 }
 
 //Returns pointer for dynamic int array
-int ** imatrix(int r, int c)
-{
+int ** imatrix(int r, int c) {
     int *ptr, **arr;
     int len, i;
 
@@ -36,8 +34,7 @@ int ** imatrix(int r, int c)
 }
 
 //Range function similar to that of the Python range function.
-int * range(int start, int finish)
-{
+int * range(int start, int finish) {
     int i, *ptr;
     const int diff = finish - start;
     ptr = (int*) malloc(diff * sizeof(int));
@@ -49,8 +46,7 @@ int * range(int start, int finish)
 }
 
 //Cartesian product function. Find cartesian product of set1 and set2
-int ** product(int ** set1, int set1_length, int set1_width, int ** set2, int set2_length, int set2_width)
-{
+int ** product(int ** set1, int set1_length, int set1_width, int ** set2, int set2_length, int set2_width) {
     int r = set1_length * set2_length;
     int c = set1_width + set2_width;
     int i, j, offset, **arr;
@@ -58,10 +54,8 @@ int ** product(int ** set1, int set1_length, int set1_width, int ** set2, int se
 
     arr = imatrix(r, c);
 
-    for (i = 0; i < set1_length; i++)
-    {
-        for (j = 0; j < set2_length; j++)
-        {
+    for (i = 0; i < set1_length; i++) {
+        for (j = 0; j < set2_length; j++) {
             offset = i * set2_length;
             for (d1 = 0; d1 < set1_width; d1++)
                 arr[offset + j][d1] = set1[i][d1];

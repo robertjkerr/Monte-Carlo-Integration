@@ -8,7 +8,7 @@ Monte Carlo Integration function
 import numpy as _np
 from itertools import product as _product
 from functools import lru_cache as _lru_cache
-
+import mctoolsScatter
 
 """
 Allocation subroutines. Assists with parallelisation.
@@ -72,16 +72,13 @@ def _throwCheck(throw,lims):
             return False 
     return True 
 
-#Throws point randomly onto space of size boxSize^d.
-def _throw(corner, boxSize, dimensions):
-     initThrow = _np.random.rand(dimensions)
-     adjustedThrow = boxSize*(initThrow + _np.array(corner))
-     return adjustedThrow
-
-#Throws n throws into the same space.
+#Throws n throws into the same space. Calls C function.
 def _scatter(corner, boxSize, dimensions, n):
-    scatter = tuple([_throw(corner,boxSize,dimensions) for i in range(n)])
-    return _np.array(scatter)
+    corner = list(corner)
+    dimensions = int(dimensions)
+    boxSize = float(boxSize)
+    n = int(n)
+    return _np.array(mctoolsScatter.scatter(corner, boxSize, dimensions, n))
 
 #Returns all throws in a scatter that are within the limits.
 def _filterScatter(scatter, lims):

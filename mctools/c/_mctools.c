@@ -1,9 +1,9 @@
-#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdlib.h>
 #include <time.h>
 #include "src/scatter.h"
 
+//Converts double matrix into Python tuple
 PyObject* build_tuple(double **mat, int r, int c) {
     Py_ssize_t lenr = r, lenc = c;
     PyObject *tuple_out = PyTuple_New(lenr);
@@ -14,27 +14,45 @@ PyObject* build_tuple(double **mat, int r, int c) {
         }
         PyTuple_SET_ITEM(tuple_out, row, elem);
     }
+    return tuple_out;
 }
 
+//Scatter function wrapper
 static PyObject* c_scatter(PyObject *self, PyObject *args) {
 
-    int *corner, dimensions, n;
+    int *corner, dimensions, n, i;
     double boxSize;
+    PyObject *cornerList, *cornerItem;
+    Py_ssize_t d;
 
-    if (!PyArg_ParseTuple(args, "idii", &corner, &boxSize, &dimensions, &n)){
+    if (!PyArg_ParseTuple(args, "O!dii", &PyList_Type, &cornerList, &boxSize, &dimensions, &n)){
         return NULL;
     }
 
+    d = PyList_Size(cornerList);
+    corner = (int*) malloc(dimensions * sizeof(int));
+    for (i =  0; i < d; i++) {
+        cornerItem = PyList_GetItem(cornerList, i);
+        /*if (!PyInt_Check(cornerItem)) {
+            PyErr_SetString(PyExc_TypeError, "Corner must be integer list.");
+            return NULL;
+        }*/
+        corner[i] = (int) PyLong_AsLong(cornerItem);
+    }
+
+    srand(time(0));
     double **scatter_mat = scatter(corner, boxSize, dimensions, n);
     return build_tuple(scatter_mat, n, dimensions);
 
 } 
 
+//Python methods
 static PyMethodDef scatter_methods[] = {
     {"scatter", c_scatter, METH_VARARGS, "Gets scatter within a box."},
     {NULL, NULL, 0, NULL}
 };
 
+//Python module definitions
 static struct PyModuleDef mctoolsScatter = {
     PyModuleDef_HEAD_INIT,
     "mctoolsScatter",
@@ -43,6 +61,7 @@ static struct PyModuleDef mctoolsScatter = {
     scatter_methods
 };
 
+//Python init function definition
 PyMODINIT_FUNC PyInit_mctoolsScatter(void) {
     return PyModule_Create(&mctoolsScatter);
 }
