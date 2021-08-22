@@ -1,6 +1,6 @@
-#ifndef SCATTER_H
-#define SCATTER_H
+#ifndef MCTOOLS_SCATTER_H
+#define MCTOOLS_SCATTER_H
 
 double ** scatter(int * corner, double boxSize, int dimensions, int n);
 
-#endif //SCATTER_H
+#endif //MCTOOLS_SCATTER_H

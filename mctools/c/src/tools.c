@@ -46,40 +46,46 @@ int * range(int start, int finish) {
 }
 
 //Cartesian product function. Find cartesian product of set1 and set2
-int ** product(int ** set1, int set1_length, int set1_width, int ** set2, int set2_length, int set2_width) {
-    int r = set1_length * set2_length;
-    int c = set1_width + set2_width;
+int ** product(int ** set1, int set1_elems, int set1_dims, int ** set2, int set2_elems, int set2_dims) {
+    int columns = set1_dims + set2_dims;
+    int rows = set1_elems * set2_elems; 
     int i, j, offset, **arr;
     int d1, d2;
 
-    arr = imatrix(r, c);
+    arr = imatrix(rows, columns);
 
-    for (i = 0; i < set1_length; i++) {
-        for (j = 0; j < set2_length; j++) {
-            offset = i * set2_length;
-            for (d1 = 0; d1 < set1_width; d1++)
+    for (i = 0; i < set1_elems; i++) {
+        offset = i * set2_elems;
+        for (j = 0; j < set2_elems; j++) {
+            for (d1 = 0; d1 < set1_dims; d1++)
                 arr[offset + j][d1] = set1[i][d1];
-            for (d2 = set1_width; d2 < set1_width + set2_width; d2++)
-                arr[offset + j][d2] = set2[j][d2-set1_width];
+            for (d2 = 0; d2 < set2_dims; d2++)
+                arr[offset + j][d2 + set1_dims] = set2[j][d2];
         }
     }
 
     return arr;
 }
 
-/*
+//Gets the upper and lower limits in each dimension at a given radius from the start point
 int ** extrema(int dimensions, int r, int * start)
 {
-    int len, c = 2, rows = dimensions;
-    int *ptr, **arr;
-    int i, j;
+    int d, high, low, **arr = imatrix(dimensions, 2);
+    for (d = 0; d < dimensions; d++) {
+        arr[d][1] = r + start[d];
+        arr[d][0] = -r + start[d];
+    } 
 
-    len = sizeof(int *) * rows + sizeof(int) * c * rows;
-    arr = (int **) malloc(len);
-    ptr = (int *)(arr + rows);
+   return arr; 
+}
 
-    for (i = 0; i < r; i++) {
-        arr[i] = (ptr + c * i);
+//Debugging tool which prints 2D array
+void printmat(int ** mat, int rows, int columns) {
+    int r, c;
+    for (r = 0; r < rows; r++) {
+        for (c = 0; c < columns; c++) {
+            printf("%d ", mat[r][c]);
+        }
+        printf("\n");
     }
 }
-*/
