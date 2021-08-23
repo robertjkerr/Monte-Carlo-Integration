@@ -79,6 +79,28 @@ int ** extrema(int dimensions, int r, int * start)
    return arr; 
 }
 
+//Counts number of common rows
+int countCommonRows(int **set1, int elems1, int **set2, int elems2, int dimensions) {
+    int row1, row2, column;
+    int runningState, firstElem, secondElem;
+    int count;
+
+    for (row1 = 0; row1 < elems1; row1++) {
+        for (row2 = 0; row2 < elems2; row2++) {
+            runningState = 0;
+            for (column = 0; column < dimensions; column++) {
+                firstElem = set1[row1][column];
+                secondElem = set2[row2][column];
+                if (firstElem == secondElem)
+                    runningState = 1;
+            }
+            count++;
+        }
+    }
+
+    return count;
+}
+
 //Debugging tool which prints 2D array
 void printmat(int ** mat, int rows, int columns) {
     int r, c;
