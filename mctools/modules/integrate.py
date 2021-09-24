@@ -8,7 +8,7 @@ Monte Carlo Integration function
 import numpy as _np
 from itertools import product as _product
 from functools import lru_cache as _lru_cache
-import mctoolsScatter
+from time import time
 
 """
 Allocation subroutines. Assists with parallelisation.
@@ -26,18 +26,20 @@ def _getBoxes(r0, dimensions,start):
     if r0 > 0:
         combinations = _getCombinations(extrema(r0))
         combinationsInner = _getCombinations(extrema(r0-1))
-        return tuple(combinations-combinationsInner)
+        return iter(combinations-combinationsInner)
     else:
-        return tuple(_getCombinations(extrema(0)))
+        return iter(_getCombinations(extrema(0)))
 
 #gets all vectors returned by _getBoxes and divides them into sublists for each core.
 def _allocate(cores, r, dimensions, start):
     boxes = _getBoxes(r, dimensions, start)
     boxList = [[] for i in range(cores)]
-    for b in range(len(boxes)):
-        box = boxes[b]
+    
+    b = 0
+    for box in boxes:
         pool = b%cores
         boxList[pool].append(box)
+        b += 1
    
     if boxList == []:
         return _allocate(cores, r+1, dimensions, start)
@@ -72,13 +74,11 @@ def _throwCheck(throw,lims):
             return False 
     return True 
 
-#Throws n throws into the same space. Calls C function.
+#Returns a scatter of throws. Each row is a throw.
 def _scatter(corner, boxSize, dimensions, n):
-    corner = list(corner)
-    dimensions = int(dimensions)
-    boxSize = float(boxSize)
-    n = int(n)
-    return _np.array(mctoolsScatter.scatter(corner, boxSize, dimensions, n))
+    init_scatter = _np.random.rand(n, dimensions)
+    scatter = boxSize * (init_scatter + _np.array(corner))
+    return scatter
 
 #Returns all throws in a scatter that are within the limits.
 def _filterScatter(scatter, lims):
