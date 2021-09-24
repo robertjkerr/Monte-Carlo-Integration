@@ -8,7 +8,6 @@ Monte Carlo Integration function
 import numpy as _np
 from itertools import product as _product
 from functools import lru_cache as _lru_cache
-from time import time
 
 """
 Allocation subroutines. Assists with parallelisation.
