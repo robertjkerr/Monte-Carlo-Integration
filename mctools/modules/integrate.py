@@ -87,9 +87,10 @@ def _filterScatter(scatter, lims):
 
 #Takes a selection of boxes, scatters over them and filters the throws.
 def _filterBoxes(boxes, boxSize, n, lims):
-    makeScatter = lambda box: _scatter(box, boxSize, len(lims), n)
+    adj_n = round(n * boxSize)
+    makeScatter = lambda box: _scatter(box, boxSize, len(lims), adj_n)
     filt = lambda box: _filterScatter(makeScatter(box), lims)
-    numThrows = n*len(boxes)
+    numThrows = adj_n*len(boxes)
     filteredThrows = map(filt, boxes)
 
     parsedThrows = []
