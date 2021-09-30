@@ -1,5 +1,5 @@
-from mctools.modules.differentiate import partialDiff, grad, directDiff, div
-from mctools.modules.integrate import integrateFunc as _integrateFunc
+from mctools.modules.differentiate import partial_diff, grad, direct_diff, div
+from mctools.modules.integrate import integrate_func as _integrate_func
 from mctools.modules.progressBar import pbar
 
 #kwargs handling for Monte Carlo Integration function
@@ -10,13 +10,13 @@ def integrate(f,n,lims,**kwargs):
         wedge = [1,1]
     
     try:
-        boxSize = kwargs["boxSize"]
+        box_size = kwargs["box_size"]
     except:
-        boxSize = 1
+        box_size = 1
     
     try:
         start = kwargs["start"]
     except:
         start = None 
 
-    return _integrateFunc(f,lims,wedge,n,boxSize,start)
+    return _integrate_func(f,lims,wedge,n,box_size,start)

@@ -19,5 +19,5 @@ lims = [[-1,1], [lim1,lim2], [lim3,lim4]]
 
 if __name__ == '__main__':
     t0 = time()
-    integral = mc.integrate(f,1000,lims,boxSize=0.5)
+    integral = mc.integrate(f,1000,lims,box_size=0.5)
     print(integral,time()-t0)

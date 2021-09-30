@@ -15,35 +15,35 @@ Allocation subroutines. Assists with parallelisation.
 
 #Gets all vectors within limits defined by extrema.
 @_lru_cache
-def _getCombinations(extrema):
-    QList = [tuple(range(d[0],d[1]+1)) for d in extrema]
-    return set(_product(*QList))
+def _get_combinations(extrema):
+    Q_list = [tuple(range(d[0],d[1]+1)) for d in extrema]
+    return set(_product(*Q_list))
 
 #gets all combinations of vectors within extrema that have the same one-norm.
-def _getBoxes(r0, dimensions,start):
+def _get_boxes(r0, dimensions,start):
     extrema = lambda r: tuple([(-r+start[d],r+start[d]) for d in range(dimensions)])
     if r0 > 0:
-        combinations = _getCombinations(extrema(r0))
-        combinationsInner = _getCombinations(extrema(r0-1))
-        return iter(combinations-combinationsInner)
+        combinations = _get_combinations(extrema(r0))
+        combinations_inner = _get_combinations(extrema(r0-1))
+        return iter(combinations-combinations_inner)
     else:
-        return iter(_getCombinations(extrema(0)))
+        return iter(_get_combinations(extrema(0)))
 
-#gets all vectors returned by _getBoxes and divides them into sublists for each core.
+#gets all vectors returned by _get_boxes and divides them into sublists for each core.
 def _allocate(cores, r, dimensions, start):
-    boxes = _getBoxes(r, dimensions, start)
-    boxList = [[] for i in range(cores)]
+    boxes = _get_boxes(r, dimensions, start)
+    box_list = [[] for i in range(cores)]
     
     b = 0
     for box in boxes:
         pool = b%cores
-        boxList[pool].append(box)
+        box_list[pool].append(box)
         b += 1
    
-    if boxList == []:
+    if box_list == []:
         return _allocate(cores, r+1, dimensions, start)
     else:
-        return tuple(boxList)
+        return tuple(box_list)
 
 
 """
@@ -51,20 +51,20 @@ Throw tools. Used for Monte Carlo random throwing.
 """
 
 #Checks if input is a number or (by assumption) a function.
-def _testType(l):
+def _test_type(l):
     return isinstance(l,int) or isinstance(l,float)
 
 #Checks if throw is within limits.
-def _throwCheck(throw,lims):
+def _throw_check(throw,lims):
     d = len(lims)
     for i in range(d):#Check each dimension
         l = lims[i]
-        if _testType(l[0]):#Find lower limit
+        if _test_type(l[0]):#Find lower limit
             a = l[0]
         else:
             a = l[0](*throw)
         
-        if _testType(l[1]):#Find upper limit
+        if _test_type(l[1]):#Find upper limit
             b = l[1]
         else:
             b = l[1](*throw)
@@ -74,31 +74,31 @@ def _throwCheck(throw,lims):
     return True 
 
 #Returns a scatter of throws. Each row is a throw.
-def _scatter(corner, boxSize, dimensions, n):
+def _scatter(corner, box_size, dimensions, n):
     init_scatter = _np.random.rand(n, dimensions)
-    scatter = boxSize * (init_scatter + _np.array(corner))
+    scatter = box_size * (init_scatter + _np.array(corner))
     return scatter
 
 #Returns all throws in a scatter that are within the limits.
-def _filterScatter(scatter, lims):
-    check = lambda throw: _throwCheck(throw, lims)
-    filteredScatter = filter(check, tuple(scatter)) 
-    return filteredScatter 
+def _filter_scatter(scatter, lims):
+    check = lambda throw: _throw_check(throw, lims)
+    filtered_scatter = filter(check, tuple(scatter)) 
+    return filtered_scatter 
 
 #Takes a selection of boxes, scatters over them and filters the throws.
-def _filterBoxes(boxes, boxSize, n, lims):
-    adj_n = round(n * boxSize)
-    makeScatter = lambda box: _scatter(box, boxSize, len(lims), adj_n)
-    filt = lambda box: _filterScatter(makeScatter(box), lims)
-    numThrows = adj_n*len(boxes)
-    filteredThrows = map(filt, boxes)
+def _filter_boxes(boxes, box_size, n, lims):
+    adj_n = round(n * box_size)
+    make_scatter = lambda box: _scatter(box, box_size, len(lims), adj_n)
+    filt = lambda box: _filter_scatter(make_scatter(box), lims)
+    num_throws = adj_n*len(boxes)
+    filtered_throws = map(filt, boxes)
 
-    parsedThrows = []
-    for part in filteredThrows:
+    parsed_throws = []
+    for part in filtered_throws:
         for throw in part:
-            parsedThrows.append(throw)
+            parsed_throws.append(throw)
 
-    return tuple(parsedThrows), numThrows
+    return tuple(parsed_throws), num_throws
 
 
 """
@@ -106,29 +106,32 @@ Integration subroutines. Main functions for integrating.
 """
 
 #Main algorithm. Expands from start and throws scatters and filters them until the limits have been engulfed.
-def _converge(lims, wedge, n, boxSize, start, r, totalThrows, totalBoxes):
+def _converge(lims, wedge, n, box_size, start, r, total_throws, total_boxes):
     dimensions = len(lims)
-    diff = (_np.array(start)/boxSize).astype(int)
+    diff = (_np.array(start)/box_size).astype(int)
     boxes = _allocate(wedge[1], r, dimensions, diff)[wedge[0]-1]
     
-    numBoxes = len(boxes)
-    filteredThrows, numThrows = _filterBoxes(boxes, boxSize, n, lims)
-    if filteredThrows != ():
-        return filteredThrows + _converge(lims, wedge, n, boxSize, start, r+1, totalThrows+numThrows, totalBoxes+numBoxes)
+    num_boxes = len(boxes)
+    filtered_throws, num_throws = _filter_boxes(boxes, box_size, n, lims)
+    if filtered_throws != ():
+        return filtered_throws + _converge(lims, wedge, n, box_size, start, r+1, total_throws+num_throws, total_boxes+num_boxes)
     else:
-        return filteredThrows, totalThrows+numThrows, totalBoxes+numBoxes
+        return filtered_throws, total_throws+num_throws, total_boxes+num_boxes
 
 #maps all the filtered throws and finds the integral.
-def integrateFunc(f, lims, wedge, n, boxSize, start):
+def integrate_func(f, lims, wedge, n, box_size, start):
     if start == None:
         start = _np.zeros(len(lims))
     g = lambda throw: f(*throw)
     try:
-        getThrows = _converge(lims,wedge,n,boxSize,start,0,0,0)
-        l = len(getThrows)
-        throws = tuple([throw for throw in getThrows[:(l-3)]])
-        totalThrows, totalBoxes = getThrows[l-2], getThrows[l-1]
+        get_throws = _converge(lims,wedge,n,box_size,start,0,0,0)
+        l = len(get_throws)
+        throws = tuple([throw for throw in get_throws[:(l-3)]])
+        total_throws, total_boxes = get_throws[l-2], get_throws[l-1]
         fMap = map(g, throws)
-        return (totalBoxes*boxSize**len(lims))*sum(fMap)/totalThrows
+        if total_throws != 0:
+            return (total_boxes*box_size**len(lims))*sum(fMap)/total_throws
+        else:
+            return 0
     except RecursionError:
-        print('Suspected recursion depth exceeded. Try increasing "boxSize"')
+        print('Suspected recursion depth exceeded. Try increasing "box_size"')

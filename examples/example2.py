@@ -21,7 +21,7 @@ lim4 = lambda *q: (1 - q[0]**2 - q[1]**2)**0.5
 lims = [[-1,1], [lim1,lim2], [lim3,lim4]]
 
 def integrate(segment):
-    return mc.integrate(f,1000,lims,boxSize=0.5,wedge=[segment,wedges])
+    return mc.integrate(f,1000,lims,box_size=0.5,wedge=[segment,wedges])
 
 #Segments integral into multiple wedges and then parallelised
 if __name__ == '__main__':
