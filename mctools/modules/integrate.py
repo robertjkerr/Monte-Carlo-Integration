@@ -13,21 +13,42 @@ from functools import lru_cache as _lru_cache
 Allocation subroutines. Assists with parallelisation.
 """
 
+
 #Gets all vectors within limits defined by extrema.
-@_lru_cache
-def _get_combinations(extrema):
-    Q_list = [tuple(range(d[0],d[1]+1)) for d in extrema]
-    return set(_product(*Q_list))
+def _get_combinations(extrema, onenorm, prev_q=None):
+    dims = len(extrema)
+    
+    if dims == 1:
+        this_range = range(*extrema[0])
+        
+        if prev_q == None:
+            if onenorm in this_range:
+                yield onenorm
+            if -onenorm in this_range:
+                yield -onenorm
+        else:
+            if onenorm in this_range:
+                yield (*prev_q, onenorm)
+            if -onenorm in this_range:
+                yield (*prev_q, -onenorm)
+    
+    else:
+        lower_lim = max(extrema[0][0], -onenorm)
+        upper_lim = min(extrema[0][1], onenorm)
+        
+        for q in range(lower_lim, upper_lim+1):
+            if prev_q == None:
+                this_q = [q]
+            else:
+                this_q = [*prev_q, q]
+                
+            yield from _get_combinations(extrema[1:], onenorm-abs(q), this_q)
 
 #gets all combinations of vectors within extrema that have the same one-norm.
 def _get_boxes(r0, dimensions,start):
     extrema = lambda r: tuple([(-r+start[d],r+start[d]) for d in range(dimensions)])
-    if r0 > 0:
-        combinations = _get_combinations(extrema(r0))
-        combinations_inner = _get_combinations(extrema(r0-1))
-        return iter(combinations-combinations_inner)
-    else:
-        return iter(_get_combinations(extrema(0)))
+    boxes = tuple(_get_combinations(extrema(r0), r0))
+    return boxes
 
 #gets all vectors returned by _get_boxes and divides them into sublists for each core.
 def _allocate(cores, r, dimensions, start):
@@ -75,14 +96,13 @@ def _throw_check(throw,lims):
 
 #Returns a scatter of throws. Each row is a throw.
 def _scatter(corner, box_size, dimensions, n):
-    init_scatter = _np.random.rand(n, dimensions)
-    scatter = box_size * (init_scatter + _np.array(corner))
-    return scatter
+    throw = lambda : box_size * (_np.random.rand(dimensions) + _np.array(corner))
+    return (throw() for i in range(n))
 
 #Returns all throws in a scatter that are within the limits.
 def _filter_scatter(scatter, lims):
     check = lambda throw: _throw_check(throw, lims)
-    filtered_scatter = filter(check, tuple(scatter)) 
+    filtered_scatter = filter(check, scatter) 
     return filtered_scatter 
 
 #Takes a selection of boxes, scatters over them and filters the throws.
